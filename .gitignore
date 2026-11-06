@@ -46,3 +46,9 @@ my-extension/patch-*.js
 # 测试脚本（防止 Key 泄露）
 ai-test/test-function-calling.js
 ai-test/test.js
+
+# AI 服务端（半开源，核心逻辑不公开）
+ai-test/
+
+# AI 服务端（半开源，核心逻辑不公开）
+ai-test/
