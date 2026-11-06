@@ -1,0 +1,12 @@
+{
+  "name": "ai-desktop-assistant",
+  "version": "1.0.0",
+  "description": "EDA AI 助手桌面悬浮球",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^33.0.0"
+  }
+}

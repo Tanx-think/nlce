@@ -1,0 +1,27 @@
+{
+  "id": "ch340-usb-serial",
+  "name": "CH340C USB转串口模块",
+  "description": "5V USB转TTL串口，带电源指示灯，使用CH340C内置晶振。适用于单片机烧录、调试、串口通信。",
+  "keywords": ["CH340", "USB转串口", "TTL", "串口", "USB"],
+  "components": [
+    { "ref": "J1", "lcsc": "C165948", "x": 200, "y": 450, "rotation": 0, "name": "Type-C" },
+    { "ref": "U1", "lcsc": "C84681", "x": 450, "y": 450, "rotation": 0, "name": "CH340C" },
+    { "ref": "R1", "lcsc": "C23186", "x": 320, "y": 380, "rotation": 270, "name": "5.1KΩ" },
+    { "ref": "R2", "lcsc": "C23186", "x": 360, "y": 380, "rotation": 270, "name": "5.1KΩ" },
+    { "ref": "C1", "lcsc": "C469550", "x": 520, "y": 380, "rotation": 270, "name": "100nF" },
+    { "ref": "C2", "lcsc": "C469550", "x": 560, "y": 380, "rotation": 270, "name": "100nF" },
+    { "ref": "R3", "lcsc": "C11702", "x": 620, "y": 380, "rotation": 270, "name": "1KΩ" },
+    { "ref": "LED1", "lcsc": "C264349", "x": 660, "y": 380, "rotation": 270, "name": "PWR-LED" }
+  ],
+  "nets": {
+    "VCC5V": ["J1.VBUS", "U1.VCC", "U1.V3", "R3.1"],
+    "GND": ["J1.GND", "U1.GND", "C1.2", "C2.2", "R1.2", "R2.2", "LED1.2"],
+    "USB_D+": ["J1.DP1", "U1.UD+"],
+    "USB_D-": ["J1.DN1", "U1.UD-"],
+    "CC1": ["J1.CC1", "R1.1"],
+    "CC2": ["J1.CC2", "R2.1"],
+    "V3_DECOUPLE": ["U1.V3", "C1.1"],
+    "VCC_DECOUPLE": ["U1.VCC", "C2.1"],
+    "LED_ANODE": ["R3.2", "LED1.1"]
+  }
+}

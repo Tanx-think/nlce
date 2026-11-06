@@ -1,0 +1,60 @@
+{
+	"name": "my-extension",
+	"uuid": "9542885bcdc44a60b659547c84c62870",
+	"displayName": "自动电路生成器",
+	"description": "根据查询文件自动生成原理图与PCB",
+	"version": "1.0.0",
+	"publisher": "Tanx",
+	"engines": {
+		"eda": "^3.2.0"
+	},
+	"license": "Apache-2.0",
+	"repository": {
+		"type": "extension-store",
+		"url": ""
+	},
+	"categories": "Schematic",
+	"keywords": [
+		"Tool",
+		"Schematic",
+		"AutoGenerate"
+	],
+	"images": {
+		"logo": "./images/logo.png"
+	},
+	"homepage": "",
+	"bugs": "",
+	"activationEvents": {},
+	"entry": "./dist/index",
+	"dependentExtensions": {},
+	"headerMenus": {
+		"schematic": [
+			{
+				"id": "menuId2",
+				"title": "自动电路",
+				"menuItems": [
+					{
+						"id": "GenerateFromQuery",
+						"title": "从查询文件生成原理图",
+						"registerFn": "generateFromQuery"
+					},
+					{
+						"id": "ConnectBridge",
+						"title": "连接 AI 服务",
+						"registerFn": "connectToBridge"
+					},
+					{
+						"id": "DisconnectBridge",
+						"title": "断开 AI 服务",
+						"registerFn": "disconnectBridge"
+					},
+					{
+						"id": "ReportAllCoordinates",
+						"title": "全坐标报告",
+						"registerFn": "reportAllCoordinates"
+					}
+				]
+			}
+		]
+	}
+}

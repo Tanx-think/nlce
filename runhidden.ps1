@@ -1,0 +1,2 @@
+Start-Process -FilePath "cmd" -ArgumentList "/c cd /d D:\jlceda-extension\ai-test && node bridge-server.js" -WindowStyle Hidden
+Start-Process -FilePath "cmd" -ArgumentList "/c cd /d D:\jlceda-extension\ai-desktop && npm start" -WindowStyle Hidden

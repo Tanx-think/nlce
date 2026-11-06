@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Build output
+dist/
+build/
+out/
+
+# Sensitive
+config.json
+test.js
+
+# Snapshots
+project-snapshot*.md
+*_bak.js
+*.bak.js
+
+# Logs
+*.log
+logs/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Temp
+tmp/
+temp/
+*.tmp
+# 备份文件（含旧版本，不进 Git）
+*.bak
+*.bak-*
+
+# 临时补丁脚本
+ai-test/patch-*.cjs
+ai-test/patch.js
+my-extension/patch-*.cjs
+my-extension/patch-*.js
+
+# 测试脚本（防止 Key 泄露）
+ai-test/test-function-calling.js
+ai-test/test.js

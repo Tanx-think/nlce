@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: transparent;
+      overflow: hidden;
+      font-family: -apple-system, "Microsoft YaHei", sans-serif;
+    }
+
+    /* ========== 悬浮球视图 ========== */
+    #ballView {
+      width: 64px;
+      height: 64px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4a90e2, #357abd);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    #ballView:hover { transform: scale(1.05); }
+    #ballView:active { transform: scale(0.95); }
+
+    .icon-img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    /* ========== 聊天视图 ========== */
+    #chatView {
+      display: none;
+      width: 400px;
+      height: 600px;
+      background: #f5f5f5;
+      flex-direction: column;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4a90e2, #357abd);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-app-region: drag;
+    }
+    .header .title { font-size: 14px; font-weight: bold; }
+    .header .buttons { display: flex; gap: 8px; -webkit-app-region: no-drag; }
+    .header button {
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .header button:hover { background: rgba(255,255,255,0.35); }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #f5f5f5;
+      /* ⭐ 允许选中文字 */
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      /* ⭐ 允许选中文字 */
+      user-select: text;
+      -webkit-user-select: text;
+      cursor: text;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #4a90e2;
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: white;
+      color: #333;
+      border-bottom-left-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .msg.system {
+      align-self: center;
+      background: #fff3cd;
+      color: #856404;
+      font-size: 12px;
+      padding: 6px 12px;
+    }
+
+    .input-area {
+      background: white;
+      padding: 12px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .input-area textarea {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      resize: none;
+      height: 60px;
+      font-family: inherit;
+      /* ⭐ 输入框允许选中 */
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .input-area textarea:focus {
+      outline: none;
+      border-color: #4a90e2;
+    }
+    .input-area button {
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 20px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .input-area button:hover { background: #357abd; }
+    .input-area button:disabled { background: #ccc; cursor: not-allowed; }
+
+    body.ball-mode #ballView { display: flex; }
+    body.ball-mode #chatView { display: none; }
+    body.chat-mode #ballView { display: none; }
+    body.chat-mode #chatView { display: flex; }
+  </style>
+</head>
+<body class="ball-mode">
+
+  <div id="ballView">
+    <img class="icon-img" id="icon" src="icon.png" alt="icon">
+  </div>
+
+  <div id="chatView">
+    <div class="header">
+      <span class="title">AI 电路助手</span>
+      <div class="buttons">
+        <button id="btnMinimize" title="收回">−</button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="msg system">正在连接 AI 服务...</div>
+    </div>
+
+    <div class="input-area">
+      <textarea id="input" placeholder="描述你的电路需求..."></textarea>
+      <button id="btnSend">发送</button>
+    </div>
+  </div>
+
+  <script>
+    const ballView = document.getElementById('ballView');
+    const icon = document.getElementById('icon');
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('input');
+    const btnSend = document.getElementById('btnSend');
+    const btnMinimize = document.getElementById('btnMinimize');
+
+    // ========== WebSocket ==========
+    let ws = null;
+    let wsConnected = false;
+
+    function connectWS() {
+      if (wsConnected) return;
+      ws = new WebSocket('ws://127.0.0.1:49620');
+
+      ws.onopen = () => {
+        wsConnected = true;
+        addMessage('system', '已连接到 AI 服务');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'chat-reply') {
+            addMessage('ai', msg.content);
+            btnSend.disabled = false;
+          } else if (msg.type === 'progress') {
+            addMessage('system', '⏱️ ' + msg.content);
+        } else if (msg.type === 'circuit-generated') {
+            addMessage('system', '✅ 电路已生成到 EDA 画布');
+            btnSend.disabled = false;
+          } else if (msg.type === 'error') {
+            addMessage('system', '错误: ' + msg.content);
+            btnSend.disabled = false;
+          }
+        } catch (e) {
+          addMessage('ai', event.data);
+          btnSend.disabled = false;
+        }
+      };
+
+      ws.onclose = () => {
+        wsConnected = false;
+        addMessage('system', '连接已断开，5 秒后重连...');
+        setTimeout(connectWS, 5000);
+      };
+
+      ws.onerror = () => {};
+    }
+
+    function addMessage(role, content) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      div.textContent = content;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        addMessage('system', '未连接到 AI 服务，请先启动 bridge-server.js');
+        return;
+      }
+
+      addMessage('user', text);
+      btnSend.disabled = true;
+
+      ws.send(JSON.stringify({ type: 'chat', content: text }));
+      inputEl.value = '';
+    }
+
+    btnSend.addEventListener('click', sendMessage);
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ========== 悬浮球：拖动 + 单击展开 ==========
+    let mouseDownPos = null;
+    let isDragging = false;
+
+    ballView.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      mouseDownPos = { x: e.screenX, y: e.screenY };
+      isDragging = false;
+    });
+
+    ballView.addEventListener('mousemove', (e) => {
+      if (!mouseDownPos) return;
+
+      const dx = e.screenX - mouseDownPos.x;
+      const dy = e.screenY - mouseDownPos.y;
+
+      if (!isDragging && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+        isDragging = true;
+        window.electronAPI.dragStart();
+      }
+    });
+
+    document.addEventListener('mouseup', async (e) => {
+      if (e.button !== 0) return;
+
+      if (isDragging) {
+        window.electronAPI.dragEnd();
+        isDragging = false;
+      } else if (mouseDownPos) {
+        const dx = Math.abs(e.screenX - mouseDownPos.x);
+        const dy = Math.abs(e.screenY - mouseDownPos.y);
+        if (dx < 5 && dy < 5) {
+          await window.electronAPI.toggleExpand(true);
+        }
+      }
+
+      mouseDownPos = null;
+    });
+
+    icon.addEventListener('error', () => {
+      icon.style.display = 'none';
+      ballView.innerHTML = '<span style="color: white; font-size: 28px; pointer-events: none;">🤖</span>';
+    });
+
+    // ========== 收回按钮 ==========
+    btnMinimize.addEventListener('click', async () => {
+      await window.electronAPI.toggleExpand(false);
+    });
+
+    // ========== 视图切换 ==========
+    window.electronAPI.onViewChange((view) => {
+      if (view === 'chat') {
+        document.body.className = 'chat-mode';
+        connectWS();
+      } else {
+        document.body.className = 'ball-mode';
+      }
+    });
+  </script>
+</body>
+</html>
