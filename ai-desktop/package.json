@@ -1,12 +1,25 @@
 {
-  "name": "ai-desktop-assistant",
+  "name": "nlce-desktop",
   "version": "1.0.0",
-  "description": "EDA AI 助手桌面悬浮球",
+  "description": "NLCE AI 助手桌面悬浮球",
+  "author": "Tanx",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "pack": "electron-builder --dir"
   },
   "devDependencies": {
-    "electron": "^33.0.0"
+    "electron": "^33.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.nlce.app",
+    "productName": "NLCE",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "portable"
+    }
   }
 }

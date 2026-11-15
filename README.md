@@ -1,55 +1,46 @@
-# NLCE — Natural Language Circuit Engineering
+# ⚡ NLCE — Natural Language Circuit Engineering
 
-用自然语言描述电路需求，AI 自动生成元件清单、查引脚、算参数、生成网表，并在嘉立创 EDA 里自动放置元件、自动布线。
+> **用一句话，让 AI 在嘉立创 EDA 里自动画出可直接打样的原理图。**
 
-> **诚实定位**：这不是「AI 全自主设计电路」。它是「AI 生成 + 大量规则兜底」的工程原型。AI 负责「猜」元件和网表，规则层负责「纠错」和「硬修」。
+NLCE 是一个基于大语言模型（LLM）与自研“物理规则引擎”的硬件生成工具。用户只需用自然语言描述需求（例如：“*画一个带 CH340 串口下载和 OLED 的 ESP32 开发板*”），系统即可在 30 秒内完成元件选型、真实引脚拉取、拓扑计算，并在嘉立创 EDA 中完成自动放置与 0 重叠的自动布线。
 
-## 已验证电路
+> 🧑‍💻 **开发者**：17 岁独立开发者，项目从 0 到 1 开发时间不到两个月。
 
-| 电路 | 元件数 | 结果 |
-|---|---|---|
-| AMS1117 LDO | 3 | ✅ 16 秒 |
-| STM32F103 核心板 | 28 | ✅ 完整 |
-| STM32F407 网关 | 54 | ✅ 270 引脚，58 秒，0 重叠 |
-| ESP32-S3 智能家居节点 | 21 | ✅ 19 秒，双 NPN 自动下载成功 |
-| **ESP32-S3 开发板 N16R8（CH340 + OLED，Arduino IDE 兼容）** | **21** | **✅ 32 秒，151 引脚全归宿，801 段线 0 重叠** |
+## ✨ 核心特性 (Features)
 
-## 架构
+- **🗣️ 自然语言驱动**：输入需求，直接生成 BOM 清单与网表，无需手动查数据手册。
+- **🧠 AI + 规则双引擎**：大模型负责“猜”电路，自研的拓扑强修引擎（Topology Engine）负责纠正 AI 的物理幻觉（如强制 Type-C 下拉、双 NPN 自动下载电路互锁、UART 交叉等）。
+- **🔌 真实 EDA 联动**：深度接入嘉立创 EDA 插件 API，直接从云端拉取真实封装引脚，拒绝本地盲猜。
+- **🛡️ 智能熔断与质量校验**：若大模型偷懒漏连，系统自动打回重写；若面对超复杂 BGA 芯片（如树莓派 5），系统自动触发熔断保护，绝不瞎连导致短路。
+- **🛣️ 0 悬空 0 重叠布线**：自研布线算法，自动区分电源/地网络独立打标，信号线主干避让，实现极高的布通率。
 
-| 项目 | 技术栈 | 作用 |
-|---|---|---|
-| `my-extension/` | TypeScript + 嘉立创扩展 SDK | EDA 插件，放元件，布线 |
-| `ai-test/bridge-server.js` | Node.js + OpenAI SDK + ws | AI 服务端，兜底，强修 |
-| `ai-desktop/` | Electron | 桌面悬浮球 |
+## 🏆 实测支持能力
 
-通信：`ws://127.0.0.1:49620`
+目前已成功一键生成并验证：
+- ✅ **ESP32 系列**：ESP32-WROOM-32 开发板（带 CH340、双 NPN 自动下载、OLED）
+- ✅ **STM32 系列**：STM32F103C8T6 核心板 / STM32F407 网关
+- ✅ **Raspberry Pi Pico**：RP2040 核心板（自动处理 QSPI Flash 与 1.1V 核心供电）
+- ✅ **电源电路**：MP1584 Buck 降压、AMS1117 LDO、TP4056 充电等。
 
-## 关键兜底逻辑
+---
 
-- `LOCAL_DICT`：常用元件本地字典，命中 0 毫秒返回
-- `findBestMatch`：按期望引脚数校验搜索结果
-- `safeParseJson`：AI 输出截断时自动补 `}` `]`
-- `forceCriticalTopology`：强行保证关键拓扑
-  - Type-C VBUS→5V、GND→GND、EH→GND
-  - CH340 D+/D- ↔ Type-C DP/DN
-  - CH340 TXD/RXD ↔ MCU RXD0/TXD0
-  - ESP32 双 NPN 自动下载（DTR/RTS 交叉互锁）
-  - ESP_EN 含 R1/SW1/C6，ESP_IO0 含 R2/SW2
-  - OLED SCL/SDA → ESP32 IO9/IO8
-  - MCU VDD/VSS 挂 3V3/GND
-- 单点清理白名单：只清临时网络，信号网络保留并警告
-- `layout`：主控居中，电容右侧，电阻下方，连接器左侧
+## 🏗️ 系统架构 (Architecture)
 
-## 快速开始
+本项目采用 **三端分离** 的微服务级架构：
 
-### 前置
+1. **AI 服务端 (Node.js)**：负责调用 LLM、解析 JSON、执行物理规则强修（**核心逻辑半开源**）。
+2. **桌面悬浮球 (Electron)**：用户交互入口，实时展示生成进度与强修日志。
+3. **EDA 插件 (TypeScript)**：负责接收网表，调用嘉立创 API 放置元件并执行自动布线。
 
-- Node.js ≥ 20
-- 嘉立创 EDA 专业版 ≥ 3.2
-- OpenAI 兼容 API Key（如阿里云百炼 DashScope）
-
-### 1. 装依赖
-
-```powershell
-cd F:\jlceda-extension\ai-test
-npm install
+```text
+[自然语言输入] 
+      ↓
+[Electron 悬浮球] ──(WebSocket)── [Node.js 核心调度层]
+                                        ├── 1. LLM 规划 (Plan)
+                                        ├── 2. 真实引脚拉取 (EDA API)
+                                        ├── 3. 组网生成 (Nets)
+                                        └── 4. 拓扑强修 (Topology Engine)
+                                                  ↓
+[嘉立创 EDA 插件] ←──(WebSocket)──── [生成网表 JSON 及排版坐标]
+      ↓
+[自动放元件 + 独立电源打标 + 自动主干布线]
